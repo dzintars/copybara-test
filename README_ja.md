@@ -1,5 +1,3 @@
-<img src='https://redux-saga.js.org/logo/0800/Redux-Saga-Logo-Landscape.png' alt='Redux Logo Landscape' width='800px'>
-
 # redux-saga
 
 [![npm version](https://img.shields.io/npm/v/redux-saga.svg)](https://www.npmjs.com/package/redux-saga)
@@ -10,32 +8,33 @@
 [![OpenCollective](https://opencollective.com/redux-saga/backers/badge.svg)](#backers)
 [![OpenCollective](https://opencollective.com/redux-saga/sponsors/badge.svg)](#sponsors)
 
-`redux-saga` is a library that aims to make application side effects (i.e. asynchronous things like data fetching and impure things like accessing the browser cache) easier to manage, more efficient to execute, easy to test, and better at handling failures.
+`redux-saga` は React/Redux アプリケーションにおける副作用（データ通信などの非同期処理、ブラウザキャッシュへのアクセスのようなピュアではない処理）をより簡単で優れたものにするためのライブラリです。
 
-The mental model is that a saga is like a separate thread in your application that's solely responsible for side effects. `redux-saga` is a redux middleware, which means this thread can be started, paused and cancelled from the main application with normal redux actions, it has access to the full redux application state and it can dispatch redux actions as well.
+Saga はアプリケーションの中で副作用を個別に実行する独立したスレッドのような動作イメージです。 `redux-saga` は Redux ミドルウェアとして実装されているため、スレッドはメインアプリケーションからのアクションに応じて起動、一時停止、中断が可能で、Redux アプリケーションのステート全体にアクセスでき、Redux アクションをディスパッチすることもできます。
 
-It uses an ES6 feature called Generators to make those asynchronous flows easy to read, write and test. *(if you're not familiar with them [here are some introductory links](https://redux-saga.js.org/docs/ExternalResources.html))* By doing so, these asynchronous flows look like your standard synchronous JavaScript code. (kind of like `async`/`await`, but generators have a few more awesome features we need)
+ES6 の Generator 関数を使うことで読み書きしやすく、テストも容易な非同期フローを実現しています（もし馴染みがないようであれば[リンク集](https://redux-saga.js.org/docs/ExternalResources.html)を参考にしてみてください）。それにより非同期フローが普通の同期的な JavaScript のコードのように見えます（`async`/`await` と似ていますが Generator 関数にしかないすごい機能があるんです）。
 
-You might've used `redux-thunk` before to handle your data fetching. Contrary to redux thunk, you don't end up in callback hell, you can test your asynchronous flows easily and your actions stay pure.
+これまで `redux-thunk` を使ってデータ通信を行っているかもしれませんが、 `redux-thunk` とは異なりコールバック地獄に陥ることなく、非同期フローを簡単にテスト可能にし、アクションをピュアに保ちます。
 
-# Getting started
+# はじめよう
 
-## Install
+## インストール
 
 ```sh
-$ npm install redux-saga
+$ npm install --save redux-saga
 ```
-or
+
+または、
 
 ```sh
 $ yarn add redux-saga
 ```
 
-Alternatively, you may use the provided UMD builds directly in the `<script>` tag of an HTML page. See [this section](#using-umd-build-in-the-browser).
+別の方法として、UMD ビルドを HTML ページの `<script>` タグで直接使うこともできます。詳しくは[こちら](#ブラウザで-umd-ビルドを使用する).
 
-## Usage Example
+## 使い方
 
-Suppose we have a UI to fetch some user data from a remote server when a button is clicked. (For brevity, we'll just show the action triggering code.)
+ボタンがクリックされたらリモートサーバから何らかのユーザデータを取得する UI を考えてみます（簡略化のため、起点となる部分のみ例示します）。
 
 ```javascript
 class UserComponent extends React.Component {
@@ -48,7 +47,8 @@ class UserComponent extends React.Component {
 }
 ```
 
-The Component dispatches a plain Object action to the Store. We'll create a Saga that watches for all `USER_FETCH_REQUESTED` actions and triggers an API call to fetch the user data.
+コンポーネントはプレーンオブジェクトの Action を Store に送り出します。
+`USER_FETCH_REQUESTED` Action を監視して、ユーザデータ取得の API 呼び出しを実行する Saga を作ります。
 
 #### `sagas.js`
 
@@ -56,7 +56,7 @@ The Component dispatches a plain Object action to the Store. We'll create a Saga
 import { call, put, takeEvery, takeLatest } from 'redux-saga/effects'
 import Api from '...'
 
-// worker Saga: will be fired on USER_FETCH_REQUESTED actions
+// ワーカー Saga: USER_FETCH_REQUESTED Action によって起動する
 function* fetchUser(action) {
    try {
       const user = yield call(Api.fetchUser, action.payload.userId);
@@ -67,19 +67,19 @@ function* fetchUser(action) {
 }
 
 /*
-  Starts fetchUser on each dispatched `USER_FETCH_REQUESTED` action.
-  Allows concurrent fetches of user.
+  USER_FETCH_REQUESTED Action が送出されるたびに fetchUser を起動します。
+  ユーザ情報の並列取得にも対応しています。
 */
 function* mySaga() {
   yield takeEvery("USER_FETCH_REQUESTED", fetchUser);
 }
 
 /*
-  Alternatively you may use takeLatest.
+  代わりに takeLatest を使うこともできます。
 
-  Does not allow concurrent fetches of user. If "USER_FETCH_REQUESTED" gets
-  dispatched while a fetch is already pending, that pending fetch is cancelled
-  and only the latest one will be run.
+  しかし、ユーザ情報の並列取得には対応しません。
+  もしレスポンス待ちの状態で USER_FETCH_REQUESTED を受け取った場合、
+  待ち状態のリクエストはキャンセルされて最後の1つだけが実行されます。
 */
 function* mySaga() {
   yield takeLatest("USER_FETCH_REQUESTED", fetchUser);
@@ -88,7 +88,7 @@ function* mySaga() {
 export default mySaga;
 ```
 
-To run our Saga, we'll have to connect it to the Redux Store using the `redux-saga` middleware.
+定義した Saga を実行するには `redux-saga` ミドルウェアを使って Redux の Store と接続する必要があります。
 
 #### `main.js`
 
@@ -99,149 +99,157 @@ import createSagaMiddleware from 'redux-saga'
 import reducer from './reducers'
 import mySaga from './sagas'
 
-// create the saga middleware
+// Saga ミドルウェアを作成する
 const sagaMiddleware = createSagaMiddleware()
-// mount it on the Store
+
+// Store にマウントする
 const store = createStore(
   reducer,
   applyMiddleware(sagaMiddleware)
 )
 
-// then run the saga
+// Saga を起動する
 sagaMiddleware.run(mySaga)
 
-// render the application
+// アプリケーションのレンダリング
 ```
 
-# Documentation
+# ドキュメント
 
-- [Introduction](https://redux-saga.js.org/docs/introduction/BeginnerTutorial.html)
-- [Basic Concepts](https://redux-saga.js.org/docs/basics/index.html)
-- [Advanced Concepts](https://redux-saga.js.org/docs/advanced/index.html)
-- [Recipes](https://redux-saga.js.org/docs/recipes/index.html)
-- [External Resources](https://redux-saga.js.org/docs/ExternalResources.html)
-- [Troubleshooting](https://redux-saga.js.org/docs/Troubleshooting.html)
-- [Glossary](https://redux-saga.js.org/docs/Glossary.html)
-- [API Reference](https://redux-saga.js.org/docs/api/index.html)
+- [イントロダクション](https://redux-saga.js.org/docs/introduction/BeginnerTutorial.html)
+- [基本コンセプト](https://redux-saga.js.org/docs/basics/index.html)
+- [応用コンセプト](https://redux-saga.js.org/docs/advanced/index.html)
+- [レシピ](https://redux-saga.js.org/docs/recipes/index.html)
+- [外部リソース](https://redux-saga.js.org/docs/ExternalResources.html)
+- [トラブルシューティング](https://redux-saga.js.org/docs/Troubleshooting.html)
+- [用語集](https://redux-saga.js.org/docs/Glossary.html)
+- [API リファレンス](https://redux-saga.js.org/docs/api/index.html)
 
-# Translation
+# 翻訳
 
-- [Chinese](https://github.com/superRaytin/redux-saga-in-chinese)
-- [Traditional Chinese](https://github.com/neighborhood999/redux-saga)
-- [Japanese](https://github.com/redux-saga/redux-saga/blob/master/README_ja.md)
-- [Korean](https://github.com/mskims/redux-saga-in-korean)
-- [Portuguese](https://github.com/joelbarbosa/redux-saga-pt_BR)
-- [Russian](https://github.com/redux-saga/redux-saga/blob/master/README_ru.md)
+- [中国語(簡体字)](https://github.com/superRaytin/redux-saga-in-chinese)
+- [中国語(繁体字)](https://github.com/neighborhood999/redux-saga)
+- [日本語](https://github.com/redux-saga/redux-saga/blob/master/README_ja.md)
+- [韓国語](https://github.com/mskims/redux-saga-in-korean)
+- [ポルトガル語](https://github.com/joelbarbosa/redux-saga-pt_BR)
+- [ロシア語](https://github.com/redux-saga/redux-saga/blob/master/README_ru.md)
 
-# Using umd build in the browser
+# ブラウザで umd ビルドを使用する
 
-There is also a **umd** build of `redux-saga` available in the `dist/` folder. When using the umd build `redux-saga` is available as `ReduxSaga` in the window object. This enables you to create Saga middleware without using ES6 `import` syntax like this:
+`dist/` ディレクトリには `redux-saga` の **umd** ビルドもあります。
+umd ビルドを使うときは window オブジェクトに `ReduxSaga` という名前で `redux-saga` が提供されます。
+この方法を使用することでES6の`import`シンタックスを用いずにSagaミドルウェアを作成することができます。
 
 ```javascript
 var sagaMiddleware = ReduxSaga.default()
 ```
 
-The umd version is useful if you don't use Webpack or Browserify. You can access it directly from [unpkg](https://unpkg.com/).
+umd バージョンは webpack や browserify を使わない場合には便利です。[unpkg](unpkg.com) から直接利用できます。
 
-The following builds are available:
+以下のビルドが利用可能です:
 
-- [https://unpkg.com/redux-saga/dist/redux-saga.umd.js](https://unpkg.com/redux-saga/dist/redux-saga.umd.js)
-- [https://unpkg.com/redux-saga/dist/redux-saga.umd.min.js](https://unpkg.com/redux-saga/dist/redux-saga.umd.min.js)
+- [https://unpkg.com/redux-saga/dist/redux-saga.js](https://unpkg.com/redux-saga/dist/redux-saga.js)
+- [https://unpkg.com/redux-saga/dist/redux-saga.min.js](https://unpkg.com/redux-saga/dist/redux-saga.min.js)
 
-**Important!** If the browser you are targeting doesn't support *ES2015 generators*, you must transpile them (i.e. with [babel plugin](https://github.com/facebook/regenerator/tree/master/packages/regenerator-transform)) and provide a valid runtime, such as [the one here](https://unpkg.com/regenerator-runtime/runtime.js). The runtime must be imported before **redux-saga**:
+**重要!** ターゲットのブラウザが *ES2015 の Generator* をサポートしていない場合、[*babel*](https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.25/browser-polyfill.min.js) のような有効な polyfill
+を提供しなければなりません。
+
+polyfill は **redux-saga** の前にインポートされなければなりません。
 
 ```javascript
-import 'regenerator-runtime/runtime'
-// then
+import 'babel-polyfill'
+// この後に
 import sagaMiddleware from 'redux-saga'
 ```
 
-# Building examples from sources
+# サンプルをソースコードからビルドする
 
 ```sh
 $ git clone https://github.com/redux-saga/redux-saga.git
 $ cd redux-saga
-$ yarn
+$ npm install
 $ npm test
 ```
 
-Below are the examples ported (so far) from the Redux repos.
+以下は Redux リポジトリから移植したサンプルです。
 
-### Counter examples
+### カウンターのサンプル
 
-There are three counter examples.
+3つのカウンターのサンプルがあります。
 
 #### counter-vanilla
 
-Demo using vanilla JavaScript and UMD builds. All source is inlined in `index.html`.
+ES2015を使っていない素の JavaScript と UMD ビルドを使用したデモです。すべてのソースコードは `index.html` にインラインで埋め込まれています。
 
-To launch the example, open `index.html` in your browser.
+単純に `index.html` をブラウザで開くだけでサンプルを実行できます。
 
-> Important: your browser must support Generators. Latest versions of Chrome/Firefox/Edge are suitable.
+>重要
+ご利用のブラウザが Generator をサポートしている必要があります。
+最新の Chrome / Firefox / MS Edge であれば大丈夫です。
 
 #### counter
 
-Demo using `webpack` and high-level API `takeEvery`.
+webpack と高レベル API `takeEvery` を使用したデモです。
 
 ```sh
 $ npm run counter
 
-# test sample for the generator
+# サンプルのテストを実行
 $ npm run test-counter
 ```
 
 #### cancellable-counter
 
-Demo using low-level API to demonstrate task cancellation.
+低レベル API を使ったタスクのキャンセルのデモです。
 
 ```sh
 $ npm run cancellable-counter
 ```
 
-### Shopping Cart example
+### ショッピングカートのサンプル
 
 ```sh
 $ npm run shop
 
-# test sample for the generator
+# サンプルのテストを実行
 $ npm run test-shop
 ```
 
-### async example
+### 非同期のサンプル
 
 ```sh
 $ npm run async
 
-# test sample for the generators
+# サンプルのテストを実行
 $ npm run test-async
 ```
 
-### real-world example (with webpack hot reloading)
+### real-world サンプル（webpack による hot reloading 付き）
 
 ```sh
 $ npm run real-world
 
-# sorry, no tests yet
+# まだテストはありません・・・
 ```
 
 ### TypeScript
+TypeScriptをRedux Sagaで使用する場合には`DOM.Iterable`か`ES2015.Iterable`が必要になります。
+`target`が`ES6`であればすでに設定されている可能性がありますが、`ES5`の場合には手動で追加する必要があります。
+`tsconfig.json`ファイルと公式の[コンパイラオプション](https://www.typescriptlang.org/docs/handbook/compiler-options.html)ドキュメントを確認してください。
 
-Redux-Saga with TypeScript requires `DOM.Iterable` or `ES2015.Iterable`. If your `target` is `ES6`, you are likely already set, however, for `ES5`, you will need to add it yourself.
-Check your `tsconfig.json` file, and the official <a href="https://www.typescriptlang.org/docs/handbook/compiler-options.html">compiler options</a> documentation.
+### ロゴ
+様々な種類のRedux Saga公式ロゴが[ロゴディレクトリ](https://github.com/redux-saga/redux-saga/tree/master/logo)にあります。
 
-### Logo
+## Redux Sagaが`async/await`でなくgeneratorsを採択した理由
+Redux Sagaがジェネレータの代わりに`async/await`構文を使うように求める[いくつかのissue](https://github.com/redux-saga/redux-saga/issues/987#issuecomment-301039792)が提起されました。
 
-You can find the official Redux-Saga logo with different flavors in the [logo directory](https://github.com/redux-saga/redux-saga/tree/master/logo).
+私たちは今後も[ジェネレータ](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Generator)を使用します。
+`async/await`の主要なメカニズムはPromiseであり、Promiseではスケジューリングの簡素さと既存のSagaのセマンティックを維持させることが難しいためです。
+`async/await`ではキャンセルといった特定の事項を許可しません。ですがジェネレータを使用すると作用をいつ、どのように実行するかを完全に制御できます。
 
+## 支援者
 
-## Redux Saga chooses generators over `async/await`
-
-A [few](https://github.com/redux-saga/redux-saga/issues/1373#issuecomment-381320534) [issues](https://github.com/redux-saga/redux-saga/issues/987#issuecomment-301039792) have been raised asking whether Redux saga plans to use `async/await` syntax instead of generators.
-
-We will continue to use [generators](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Generator). The primary mechanism of `async/await` is Promises and it is very difficult to retain the scheduling simplicity and semantics of existing Saga concepts using Promises. `async/await` simply don't allow for certain things - like i.e. cancellation. With generators we have full power over how & when effects are executed.
-
-## Backers
-Support us with a monthly donation and help us continue our activities. \[[Become a backer](https://opencollective.com/redux-saga#backer)\]
+毎月の寄付で私たちの開発を援助し、活動を継続できるように支援してください。 \[[支援者になる](https://opencollective.com/redux-saga#backer)\]
 
 <a href="https://opencollective.com/redux-saga/backer/0/website" target="_blank"><img src="https://opencollective.com/redux-saga/backer/0/avatar.svg"></a>
 <a href="https://opencollective.com/redux-saga/backer/1/website" target="_blank"><img src="https://opencollective.com/redux-saga/backer/1/avatar.svg"></a>
@@ -275,8 +283,9 @@ Support us with a monthly donation and help us continue our activities. \[[Becom
 <a href="https://opencollective.com/redux-saga/backer/29/website" target="_blank"><img src="https://opencollective.com/redux-saga/backer/29/avatar.svg"></a>
 
 
-### Sponsors
-Become a sponsor and get your logo on our README on Github with a link to your site. \[[Become a sponsor](https://opencollective.com/redux-saga#sponsor)\]
+### スポンサー
+
+スポンサーとしてあなたのサイトへのリンクとなるロゴをGithub上のREADMEに掲載しませんか。 \[[スポンサーになる](https://opencollective.com/redux-saga#sponsor)\]
 
 <a href="https://opencollective.com/redux-saga/sponsor/0/website" target="_blank"><img src="https://opencollective.com/redux-saga/sponsor/0/avatar.svg"></a>
 <a href="https://opencollective.com/redux-saga/sponsor/1/website" target="_blank"><img src="https://opencollective.com/redux-saga/sponsor/1/avatar.svg"></a>
@@ -308,8 +317,3 @@ Become a sponsor and get your logo on our README on Github with a link to your s
 <a href="https://opencollective.com/redux-saga/sponsor/27/website" target="_blank"><img src="https://opencollective.com/redux-saga/sponsor/27/avatar.svg"></a>
 <a href="https://opencollective.com/redux-saga/sponsor/28/website" target="_blank"><img src="https://opencollective.com/redux-saga/sponsor/28/avatar.svg"></a>
 <a href="https://opencollective.com/redux-saga/sponsor/29/website" target="_blank"><img src="https://opencollective.com/redux-saga/sponsor/29/avatar.svg"></a>
-
-## License
-Copyright (c) 2015 Yassine Elouafi.
-
-Licensed under The MIT License (MIT).
