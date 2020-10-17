@@ -1,6 +1,6 @@
 # Update these references to your orginzations repos
 sourceUrl = "https://github.com/redux-saga/redux-saga.git"
-destinationUrl = "https://github.com/dzintars/copybara-test.git"
+destinationUrl = "git@github.com:dzintars/copybara-test.git"
 
 core.workflow(
     name = "default",
@@ -16,7 +16,7 @@ core.workflow(
         push = "main",
     ),
     destination_files = glob(
-        include = ["third_party/javascript/com.github/redux-saga/**"],
+        ["**"],
         exclude = [
             "third_party/javascript/com.github/redux-saga/copy.bara.sky",
         ],
@@ -24,7 +24,7 @@ core.workflow(
     authoring = authoring.pass_thru("Default email <dzintars.klavins@gmail.com>"),
 
     # Change the path here to the folder you want to publish publicly
-    # transformations = [
-	  #  core.move("third_party/javascript/com.github/redux-saga", ""),
-	  # ],
+    transformations = [
+	    core.move("", "third_party/javascript/com.github/redux-saga"),
+	  ],
 )
